@@ -75,6 +75,16 @@ def main():
                 x, y = pygame.mouse.get_pos()
                 simulation.add_smoke_particle(x, y, np.random.randint(-1, 2), np.random.randint(-1, 2))
 
+            # Add a vent if the user presses the `v` key
+            elif event.type == pygame.KEYDOWN and event.key == pygame.K_v:
+                x, y = pygame.mouse.get_pos()
+                simulation.add_vent(x, y)
+
+            # Add a window if the user presses the `w` key
+            elif event.type == pygame.KEYDOWN and event.key == pygame.K_w:
+                x, y = pygame.mouse.get_pos()
+                simulation.add_window(x, y)
+
         # Update the simulation
         simulation.update()
 
