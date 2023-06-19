@@ -40,44 +40,14 @@ gui_manager = pygame_gui.UIManager((WINDOW_WIDTH, WINDOW_HEIGHT))
 running = False
 simulation_speed = 1.0
 
+# Particle count font
+particle_font = pygame.font.Font(None, 24)
+
 def create_particle():
     """Create a new smoke particle."""
     x = random.uniform(room_x, room_x + room_width)
     y = random.uniform(room_y, room_y + room_height)
     particle = pygame.Rect(x, y, 4, 4)
-
-    # Adjust particle position to avoid windows and vents
-    for window_rect in windows:
-        if particle.colliderect(window_rect):
-            # Calculate the direction away from the window
-            dx = particle.x - (window_rect.x + window_rect.width / 2)
-            dy = particle.y - (window_rect.y + window_rect.height / 2)
-            distance = math.sqrt(dx ** 2 + dy ** 2)
-
-            if distance > 0:
-                dx /= distance
-                dy /= distance
-
-            # Move the particle away from the window
-            particle.x += dx * 20
-            particle.y += dy * 20
-            break
-
-    for vent_rect in vents:
-        if particle.colliderect(vent_rect):
-            # Calculate the direction towards the vent
-            dx = (vent_rect.x + vent_rect.width / 2) - particle.x
-            dy = (vent_rect.y + vent_rect.height / 2) - particle.y
-            distance = math.sqrt(dx ** 2 + dy ** 2)
-
-            if distance > 0:
-                dx /= distance
-                dy /= distance
-
-            # Move the particle towards the vent
-            particle.x += dx * 20
-            particle.y += dy * 20
-            break
 
     return particle
 
@@ -105,6 +75,23 @@ def update_particles():
     for particle in particles:
         particle.x += random.uniform(-0.5, 0.5) * simulation_speed * 0.1
         particle.y += random.uniform(-0.5, 0.5) * simulation_speed * 0.1
+
+def update_particle_count():
+    """Update the particle count based on the number of windows and vents."""
+    global num_particles
+
+    reduction_factor = 1.0
+
+    # Calculate reduction factor based on the number of windows
+    for _ in windows:
+        reduction_factor *= 0.8  # Reduce particle count by 20% for each window
+
+    # Calculate reduction factor based on the number of vents
+    for _ in vents:
+        reduction_factor *= 0.5  # Reduce particle count by 50% for each vent
+
+    # Calculate the final particle count
+    num_particles = max(int(num_particles * reduction_factor), 0)
 
 def add_window():
     """Add a window to the room."""
@@ -168,30 +155,27 @@ while True:
                 running = False
             elif add_window_button_rect.collidepoint(mouse_pos):
                 add_window()
+                update_particle_count()
             elif remove_window_button_rect.collidepoint(mouse_pos):
                 remove_window()
+                update_particle_count()
             elif add_vent_button_rect.collidepoint(mouse_pos):
                 add_vent()
+                update_particle_count()
             elif remove_vent_button_rect.collidepoint(mouse_pos):
                 remove_vent()
+                update_particle_count()
         elif event.type == pygame.USEREVENT:
             if event.user_type == pygame_gui.UI_HORIZONTAL_SLIDER_MOVED:
                 if event.ui_element == slider:
-                    simulation_speed = event.value
-        elif event.type == pygame.USEREVENT:
-            if event.user_type == pygame_gui.UI_HORIZONTAL_SLIDER_MOVED:
-                if event.ui_element == slider:
-                    # Update simulation speed based on the slider value
                     simulation_speed = event.value
 
         gui_manager.process_events(event)
 
     # Update
     if running:
-        # Update particles' positions based on the simulation speed
-        for _ in range(int(simulation_speed)):
-            particles = [create_particle() for _ in range(num_particles)]
-            update_particles()
+        particles = [create_particle() for _ in range(num_particles)]
+        update_particles()
 
     # Draw
     window.fill(WHITE)
@@ -219,14 +203,14 @@ while True:
         relative_rect=add_window_button_rect,
         text="Add Window",  # Button notation: Add a window to the room
         manager=gui_manager
-)
+    )
 
     # Remove Window Button
     remove_window_button = pygame_gui.elements.UIButton(
         relative_rect=remove_window_button_rect,
         text="Remove Window",  # Button notation: Remove a window from the room
         manager=gui_manager
-)
+    )
 
     # Add Vent Button
     add_vent_button = pygame_gui.elements.UIButton(
@@ -242,12 +226,17 @@ while True:
         manager=gui_manager
     )
 
-    # Update GUI manager
-    gui_manager.update(FPS)
+    # Update the particle count description
+    particle_count_text = f"Particle Count: {num_particles}"
+    particle_count_surface = particle_font.render(particle_count_text, True, RED)
+    particle_count_rect = particle_count_surface.get_rect(topright=(WINDOW_WIDTH - 20, 20))
+    window.blit(particle_count_surface, particle_count_rect)
 
-    # Draw GUI elements
+    # Update the GUI
+    gui_manager.update(FPS / 1000.0)
+
+    # Draw the GUI
     gui_manager.draw_ui(window)
 
-    # Display
     pygame.display.flip()
     clock.tick(FPS)
