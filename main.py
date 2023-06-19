@@ -139,6 +139,7 @@ add_window_button_rect = pygame.Rect(20, 80, 100, 40)
 remove_window_button_rect = pygame.Rect(140, 80, 100, 40)
 add_vent_button_rect = pygame.Rect(20, 140, 100, 40)
 remove_vent_button_rect = pygame.Rect(140, 140, 100, 40)
+add_particle_button_rect = pygame.Rect(260, 20, 160, 40)
 
 # Game loop
 while True:
@@ -165,6 +166,9 @@ while True:
             elif remove_vent_button_rect.collidepoint(mouse_pos):
                 remove_vent()
                 update_particle_count()
+            elif add_particle_button_rect.collidepoint(mouse_pos):
+                particles.append(create_particle())
+                num_particles += 1
         elif event.type == pygame.USEREVENT:
             if event.user_type == pygame_gui.UI_HORIZONTAL_SLIDER_MOVED:
                 if event.ui_element == slider:
@@ -226,17 +230,23 @@ while True:
         manager=gui_manager
     )
 
-    # Update the particle count description
-    particle_count_text = f"Particle Count: {num_particles}"
-    particle_count_surface = particle_font.render(particle_count_text, True, RED)
-    particle_count_rect = particle_count_surface.get_rect(topright=(WINDOW_WIDTH - 20, 20))
-    window.blit(particle_count_surface, particle_count_rect)
+    # Add Particle Button
+    add_particle_button = pygame_gui.elements.UIButton(
+        relative_rect=add_particle_button_rect,
+        text="Add Particle",  # Button notation: Add a particle to the room
+        manager=gui_manager
+    )
 
-    # Update the GUI
-    gui_manager.update(FPS / 1000.0)
+    particle_count_text = particle_font.render(
+        f"Particle Count: {num_particles}", True, SMOKE_COLOR
+    )
+    window.blit(particle_count_text, (260, 80))
 
-    # Draw the GUI
+    # Update GUI manager
+    gui_manager.update(FPS / 1000)
+
+    # Draw GUI elements
     gui_manager.draw_ui(window)
 
-    pygame.display.flip()
+    pygame.display.update()
     clock.tick(FPS)
